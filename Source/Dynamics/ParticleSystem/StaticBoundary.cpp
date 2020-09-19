@@ -40,6 +40,16 @@ namespace PhysIKA
 		return true;
 	}
 
+
+
+	//template<typename TDataType>
+	//bool StaticBoundary<TDataType>::addParticleSystem(std::shared_ptr<HeightFieldVelocitySolve<TDataType>> child)
+	//{
+	//	this->addChild(child);
+	//	m_particleSystems.push_back(child);
+	//	return true;
+	//}
+
 	template<typename TDataType>
 	void StaticBoundary<TDataType>::advance(Real dt)
 	{

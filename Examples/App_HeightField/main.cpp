@@ -47,7 +47,7 @@ void CreateScene()
 	root->loadCube(Vector3f(0), Vector3f(1), 0.02f, true);
 
 	std::shared_ptr<HeightFieldVelocitySolve<DataType3f>> child1 = std::make_shared<HeightFieldVelocitySolve<DataType3f>>();
-	//root->addHeightField(child1);
+	//root->addParticleSystem(child1);
 
 	//auto ptRender1 = std::make_shared<PointRenderModule>();
 	//ptRender1->setColor(Vector3f(1, 0, 0));

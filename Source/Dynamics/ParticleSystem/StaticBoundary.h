@@ -7,7 +7,7 @@ namespace PhysIKA {
 	template <typename TDataType> class ParticleSystem;
 	template <typename TDataType> class DistanceField3D;
 	template <typename TDataType> class BoundaryConstraint;
-
+	template <typename TDataType> class HeightFieldVelocitySolve;
 	template<typename TDataType>
 	class StaticBoundary : public Node
 	{
@@ -21,6 +21,8 @@ namespace PhysIKA {
 
 		bool addRigidBody(std::shared_ptr<RigidBody<TDataType>> child);
 		bool addParticleSystem(std::shared_ptr<ParticleSystem<TDataType>> child);
+		//bool addParticleSystem(std::shared_ptr<HeightFieldVelocitySolve<TDataType>> child);
+
 
 		void advance(Real dt) override;
 

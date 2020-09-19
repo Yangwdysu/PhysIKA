@@ -163,4 +163,5 @@ namespace PhysIKA {
 
 	template<typename T>
 	using DeviceArray2D = Array2D<T, DeviceType::GPU>;
+	typedef DeviceArray2D<float2> Grid2f;
 }

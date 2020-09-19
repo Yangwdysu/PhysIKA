@@ -25,15 +25,13 @@ namespace PhysIKA {
 
 		m_simulatedOriginX = 0;
 		m_simulatedOriginY = 0;
-
-		initialized();
 		initDynamicRegion();
 
 		initSource();
 	}
 
 
-	__global__ void C_InitDynamicRegion(float4 *grid, int gridwidth, int gridheight, int pitch, float level)
+	__global__ void C_InitDynamicRegion(Grid4f grid, int gridwidth, int gridheight, int pitch, float level)
 	{
 		int x = threadIdx.x + blockIdx.x * blockDim.x;
 		int y = threadIdx.y + blockIdx.y * blockDim.y;
@@ -79,11 +77,11 @@ namespace PhysIKA {
 		dim3 blocksPerGrid(x, y);
 
 		//init grid with initial values
-		C_InitDynamicRegion << < blocksPerGrid, threadsPerBlock >> > (m_device_grid, extNx, extNy, m_grid_pitch, m_horizon);
+		C_InitDynamicRegion << < blocksPerGrid, threadsPerBlock >> > (m_device_grid, extNx, extNy, pathcSize, m_horizon);
 		//synchronCheck;
 
 		//init grid_next with initial values
-		C_InitDynamicRegion << < blocksPerGrid, threadsPerBlock >> > (m_device_grid_next, extNx, extNy, m_grid_pitch, m_horizon);
+		C_InitDynamicRegion << < blocksPerGrid, threadsPerBlock >> > (m_device_grid_next, extNx, extNy, pathcSize, m_horizon);
 		//synchronCheck;
 
 		error = cudaThreadSynchronize();
@@ -94,7 +92,7 @@ namespace PhysIKA {
 
 
 	__global__ void C_InitSource(
-		float2* source,
+		Grid2f source,
 		int patchSize)
 	{
 		int i = threadIdx.x + blockIdx.x * blockDim.x;
@@ -145,8 +143,8 @@ namespace PhysIKA {
 	}
 
 	__global__ void C_AddSource(
-		float4 *grid,
-		float2* source,
+		Grid4f grid,
+		Grid2f source,
 		int patchSize,
 		int pitchSize)
 	{
@@ -179,7 +177,7 @@ namespace PhysIKA {
 			gp.x = h;
 			gp.y = u*h;
 			gp.z = v*h;
-			grid[gx + gy*pitchSize]= gp ;
+			grid[gx + gy*pitchSize]= gp;
 			//grid2Dwrite(grid, gx, gy, pitchSize, gp);
 		}
 	}
@@ -196,11 +194,11 @@ namespace PhysIKA {
 			m_device_grid_next,
 			m_source,
 			m_simulatedRegionWidth,
-			m_grid_pitch);
+			pathcSize);
 		swapDeviceGrid();
 		//synchronCheck;
 	}
-	__global__ void C_ImposeBC(float4* grid_next, float4* grid, int width, int height, int pitch)
+	__global__ void C_ImposeBC(Grid4f grid_next, Grid4f grid, int width, int height)
 	{
 		int x = threadIdx.x + blockIdx.x * blockDim.x;
 		int y = threadIdx.y + blockIdx.y * blockDim.y;
@@ -298,7 +296,7 @@ namespace PhysIKA {
 		H.w = 0.0f;
 		return H;
 	}
-	__global__ void C_OneWaveStep(float4* grid, float4* grid_next,int width, int height, Real timestep, int pitch)
+	__global__ void C_OneWaveStep(Grid4f grid, Grid4f grid_next,int width, int height, Real timestep)
 	{
 		int x = threadIdx.x + blockIdx.x * blockDim.x;
 		int y = threadIdx.y + blockIdx.y * blockDim.y;
@@ -334,11 +332,10 @@ namespace PhysIKA {
 
 
 	__global__ void C_InitHeightField(
-		float4* height,
-		float4* grid,
-		int width,
+		Grid4f height,
+		Grid4f grid,
+		Real horizon,
 		int patchSize,
-		float horizon,
 		float realSize)
 	{
 		int i = threadIdx.x + blockIdx.x * blockDim.x;
@@ -348,7 +345,7 @@ namespace PhysIKA {
 			int gridx = i + 1;
 			int gridy = j + 1;
 
-			float4 gp = grid[gridx+gridy*width];
+			float4 gp = grid[gridx+gridy*patchSize];
 			height[i + j*patchSize].x = gp.x - horizon;
 
 			float d = sqrtf((i - patchSize / 2)*(i - patchSize / 2) + (j - patchSize / 2)*(j - patchSize / 2));
@@ -362,7 +359,7 @@ namespace PhysIKA {
 	}
 
 	__global__ void C_InitHeightGrad(
-		float4* height,
+		Grid4f height,
 		int patchSize)
 	{
 		int i = threadIdx.x + blockIdx.x * blockDim.x;
@@ -407,18 +404,18 @@ namespace PhysIKA {
 		for (int iter = 0; iter < nStep; iter++)
 		{
 			//cudaBindTexture2D(0, &g_capillaryTexture, m_device_grid, &g_cpChannelDesc, extNx, extNy, m_grid_pitch * sizeof(gridpoint));
-			C_ImposeBC << < blocksPerGrid1, threadsPerBlock1 >> > (m_device_grid_next, m_device_grid, extNx, extNy, m_grid_pitch);
+			C_ImposeBC << < blocksPerGrid1, threadsPerBlock1 >> > (m_device_grid_next, m_device_grid, extNx, extNy);
 			swapDeviceGrid();
 			//synchronCheck;
 
 			//cudaBindTexture2D(0, &g_capillaryTexture, m_device_grid, &g_cpChannelDesc, extNx, extNy, m_grid_pitch * sizeof(gridpoint));
 
 			C_OneWaveStep << < blocksPerGrid, threadsPerBlock >> > (
+				m_device_grid,
 				m_device_grid_next,
 				m_simulatedRegionWidth,
 				m_simulatedRegionHeight,
-				1.0f*timestep,
-				m_grid_pitch);
+				1.0f*timestep);
 			swapDeviceGrid();
 			//synchronCheck;
 		}
@@ -426,7 +423,7 @@ namespace PhysIKA {
 
 
 		//error = cudaBindTexture2D(0, &g_capillaryTexture, m_device_grid, &g_cpChannelDesc, extNx, extNy, m_grid_pitch * sizeof(gridpoint));
-		C_InitHeightField << < blocksPerGrid, threadsPerBlock >> > (m_height, m_simulatedRegionWidth, m_horizon, m_realGridSize);
+		C_InitHeightField << < blocksPerGrid, threadsPerBlock >> > (m_height, m_device_grid, m_horizon, pathcSize, m_realGridSize);
 		//synchronCheck;
 		C_InitHeightGrad << < blocksPerGrid, threadsPerBlock >> > (m_height, m_simulatedRegionWidth);
 		//synchronCheck;

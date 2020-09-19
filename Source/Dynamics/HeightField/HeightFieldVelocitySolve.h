@@ -1,16 +1,18 @@
 
 #include "Framework/Framework/NumericalIntegrator.h"
+//#include"Platform.h"
 #include "Framework/Framework/FieldVar.h"
 #include "Framework/Framework/FieldArray.h"
 #include "Array/Array4D.h"
-
+#include"ParticleSystem/ParticleSystem.h"
+#include "Dynamics/RigidBody/RigidBody.h"
 
 
 namespace PhysIKA {
 #define BLOCKSIZE_X 16
 #define BLOCKSIZE_Y 16
 	template<typename TDataType>
-	class HeightFieldVelocitySolve : public Node {
+	class HeightFieldVelocitySolve : public ParticleSystem<TDataType> {
 		DECLARE_CLASS_1(HeightFieldVelocitySolve, TDataType)
 
 	public:
@@ -37,12 +39,14 @@ namespace PhysIKA {
 		Grid4f m_device_grid;
 		Grid4f m_device_grid_next;
 		Grid4f m_height;
-		VarField<Real> m_horizon=2.0f;
+		Grid2f m_source;
+		Real m_horizon;
 		//float m_horizon = 2.0f;
 
 
 		float m_patch_length;
 		float m_realGridSize;			//网格实际距离
+		int pathcSize;
 
 		int m_simulatedRegionWidth;		//动态区域宽度
 		int m_simulatedRegionHeight;	//动态区域高度
@@ -55,5 +59,10 @@ namespace PhysIKA {
 
 
 
+#ifdef PRECISION_FLOAT
+	template class HeightFieldVelocitySolve<DataType3f>;
+#else
+	template class HeightFieldVelocitySolve<DataType3d>;
+#endif
 
 }
