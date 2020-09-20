@@ -12,7 +12,7 @@ namespace PhysIKA {
 #define BLOCKSIZE_X 16
 #define BLOCKSIZE_Y 16
 	template<typename TDataType>
-	class HeightFieldVelocitySolve : public ParticleSystem<TDataType> {
+	class HeightFieldVelocitySolve:public Node {
 		DECLARE_CLASS_1(HeightFieldVelocitySolve, TDataType)
 
 	public:

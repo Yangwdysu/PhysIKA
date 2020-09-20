@@ -43,10 +43,10 @@ void CreateScene()
 {
 	SceneGraph& scene = SceneGraph::getInstance();
 
-	std::shared_ptr<StaticBoundary<DataType3f>> root = scene.createNewScene<StaticBoundary<DataType3f>>();
-	root->loadCube(Vector3f(0), Vector3f(1), 0.02f, true);
+	std::shared_ptr<HeightFieldVelocitySolve<DataType3f>> root = scene.createNewScene<HeightFieldVelocitySolve<DataType3f>>();
+	//root->loadCube(Vector3f(0), Vector3f(1), 0.02f, true);
 
-	std::shared_ptr<HeightFieldVelocitySolve<DataType3f>> child1 = std::make_shared<HeightFieldVelocitySolve<DataType3f>>();
+	//std::shared_ptr<HeightFieldVelocitySolve<DataType3f>> child1 = std::make_shared<HeightFieldVelocitySolve<DataType3f>>();
 	//root->addParticleSystem(child1);
 
 	//auto ptRender1 = std::make_shared<PointRenderModule>();
